@@ -14,5 +14,11 @@
   "devDependencies": {
     "@types/node": "^16.11.4",
     "eslint": "^7.32.0"
-  }
+  },
+  "main": ".eslintrc.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Dairin-dei/HTML-builder.git"
+  },
+  "keywords": []
 }
