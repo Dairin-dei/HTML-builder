@@ -1,7 +1,6 @@
 const fs = require("fs");
 const path = require("path");
 pathToDir = path.join(__dirname, "/secret-folder");
-//console.log(pathToDir);
 fs.readdir(pathToDir, { withFileTypes: true }, (err, files) => {
   if (err) throw err;
   files.forEach((file) => {
@@ -12,7 +11,7 @@ fs.readdir(pathToDir, { withFileTypes: true }, (err, files) => {
       let name = path.basename(fullPath, ext);
       fs.stat(fullPath, (err, stats) => {
         if (err) throw err;
-        console.log(`${name} - ${ext.slice(1)} - ${stats.size / 1000}kb`);
+        console.log(`${name} - ${ext.slice(1)} - ${stats.size / 1024}kb`);
       });
     }
   });
