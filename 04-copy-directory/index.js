@@ -4,23 +4,49 @@ const path = require("path");
 const pathToFolder = path.join(__dirname, "/files-copy");
 const pathToDir = path.join(__dirname, "/files");
 
-fs.mkdir(pathToFolder, { recursive: true }, (err) => {
-  if (err) throw err;
-  fs.readdir(pathToFolder, { withFileTypes: true }, (err1, files) => {
-    if (err1) throw err1;
-    files.forEach((file) => {
-      fs.unlink(path.join(pathToFolder, file.name), (err2) => {
-        if (err2) throw err2;
-      });
+async function removeDirectory() {
+  await fsPromises.rmdir(pathToFolder, { recursive: true });
+}
+
+async function copyFiles(pathCurrent, pathFuture) {
+  fsPromises
+    .mkdir(pathFuture, { recursive: true })
+    .then(() => {})
+    .catch((err) => {
+      throw err;
     });
-    fs.readdir(pathToDir, { withFileTypes: true }, (err3, files) => {
-      if (err3) throw err3;
-      files.forEach((file) => {
-        fsPromises.copyFile(
-          path.join(pathToDir, file.name),
-          path.join(pathToFolder, file.name)
+
+  fs.readdir(pathCurrent, { withFileTypes: true }, (err, files) => {
+    if (err) {
+      throw err;
+    }
+
+    files.forEach((file) => {
+      if (!file.isDirectory()) {
+        fsPromises
+          .copyFile(
+            path.join(pathCurrent, file.name),
+            path.join(pathFuture, file.name)
+          )
+          .then(() => {})
+          .catch((err) => {
+            throw err;
+          });
+      } else {
+        return copyFiles(
+          path.join(pathCurrent, file.name),
+          path.join(pathFuture, file.name)
         );
-      });
+      }
+      //    }
     });
   });
-});
+}
+
+async function main() {
+  removeDirectory().then(() => {
+    copyFiles(pathToDir, pathToFolder);
+  });
+}
+
+main();

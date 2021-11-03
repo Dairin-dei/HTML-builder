@@ -1,82 +1,115 @@
 const path = require("path");
 const fs = require("fs");
-const fsProm = require("fs").promises;
+const fsPromises = require("fs").promises;
 const pathToComponents = path.join(__dirname, "/components");
 const pathToDist = path.join(__dirname, "/project-dist");
-const pathToOutput = path.join(pathToDist, "index.html");
-const outputHtml = fs.createWriteStream(pathToOutput);
+
+let outputHtml;
 
 const pathToSourceStyles = path.join(__dirname, "/styles");
-const pathToDestination = path.join(__dirname, "/project-dist/style.css");
-const fileOutputCss = fs.createWriteStream(pathToDestination);
 
 const pathToDistAssets = path.join(__dirname, "/project-dist/assets");
 const pathToSourceAssets = path.join(__dirname, "/assets");
 
 let dataBasic = "";
 
-function copyAssets() {
-  fs.mkdir(pathToDistAssets, { recursive: true }, (err) => {
-    if (err) throw err;
-    fs.readdir(pathToDistAssets, { withFileTypes: true }, (err1, files) => {
-      if (err1) throw err1;
-      files.forEach((file) => {
-        fs.unlink(path.join(pathToDistAssets, file.name), (err2) => {
-          if (err2) throw err2;
-        });
-      });
-      fs.readdir(pathToSourceAssets, { withFileTypes: true }, (err3, files) => {
-        if (err3) throw err3;
-        files.forEach((file) => {
-          fsProm.copyFile(
-            path.join(pathToSourceAssets, file.name),
-            path.join(pathToDistAssets, file.name)
-          );
-        });
-      });
+async function removeDirectory(pathToFolder) {
+  await fsPromises.rmdir(pathToFolder, { recursive: true });
+}
+
+async function copyFiles(pathCurrent, pathFuture) {
+  fsPromises
+    .mkdir(pathFuture, { recursive: true })
+    .then(() => {})
+    .catch((err) => {
+      throw err;
     });
+
+  fs.readdir(pathCurrent, { withFileTypes: true }, (err, files) => {
+    if (err) {
+      throw err;
+    }
+
+    files.forEach((file) => {
+      if (!file.isDirectory()) {
+        fsPromises
+          .copyFile(
+            path.join(pathCurrent, file.name),
+            path.join(pathFuture, file.name)
+          )
+          .then(() => {})
+          .catch((err) => {
+            throw err;
+          });
+      } else {
+        return copyFiles(
+          path.join(pathCurrent, file.name),
+          path.join(pathFuture, file.name)
+        );
+      }
+    });
+  });
+}
+
+async function copyAssets() {
+  removeDirectory(pathToDistAssets).then(() => {
+    copyFiles(pathToSourceAssets, pathToDistAssets);
   });
 }
 
 function main() {
-  copyAssets();
-  /*  const fileTemplate = path.join(__dirname, "template.html");
-
-  fs.readFile(fileTemplate, "utf8", (err, data) => {
+  fs.mkdir(pathToDist, { recursive: true }, (err) => {
     if (err) throw err;
-    fs.writeFile(pathToOutput, data, "utf8", (err) => {
+    copyAssets();
+
+    const fileTemplate = path.join(__dirname, "template.html");
+
+    fs.readFile(fileTemplate, "utf8", (err, data) => {
       if (err) throw err;
-      const readon = fs.createReadStream(pathToOutput, "utf-8");
-      fs.mkdir(pathToDist, { recursive: true }, (err) => {
-        if (err) throw err;
-        readon.on("data", (line) => {
-          dataBasic = line;
-          changeHtml();
+
+      const pathToOutput = path.join(pathToDist, "index.html");
+      const outputHtml = fs.createWriteStream(pathToOutput);
+      if (err) throw err;
+      //console.log("make dist");
+      fs.writeFile(pathToOutput, data, "utf8", (err1) => {
+        if (err1) throw err1;
+        const readon = fs.createReadStream(pathToOutput, "utf-8");
+        fs.mkdir(pathToDist, { recursive: true }, (err2) => {
+          if (err2) throw err2;
+          //console.log("create dist");
+          readon.on("data", (line) => {
+            dataBasic = line;
+            changeHtml(outputHtml);
+          });
         });
       });
     });
-  });
-  fs.readdir(pathToSourceStyles, { withFileTypes: true }, (err, files) => {
-    if (err) throw err;
-    files.forEach((file) => {
-      let fileName = path.join(pathToSourceStyles, file.name.toString());
-      let ext = path.extname(fileName);
-      if (!file.isDirectory()) {
-        if (ext == ".css") {
-          let readon = fs.createReadStream(fileName, "utf-8");
-          readon.on("data", (data) => {
-            fileOutputCss.write(data);
-          });
+
+    fs.readdir(pathToSourceStyles, { withFileTypes: true }, (err, files) => {
+      if (err) throw err;
+      const fileOutputCss = fs.createWriteStream(
+        path.join(__dirname, "/project-dist/style.css")
+      );
+      files.forEach((file) => {
+        let fileName = path.join(pathToSourceStyles, file.name.toString());
+        let ext = path.extname(fileName);
+        if (!file.isDirectory()) {
+          if (ext == ".css") {
+            let readon = fs.createReadStream(fileName, "utf-8");
+            readon.on("data", (data) => {
+              fileOutputCss.write(data);
+            });
+          }
         }
-      }
+      });
     });
-  });*/
+  });
 }
 
-async function changeHtml() {
+async function changeHtml(outputHtml) {
   let arrFiles = [];
 
-  const readDir = fsProm
+  const readDir = fsPromises
     .readdir(pathToComponents, { withFileTypes: true })
     .then((files) => {
       files.forEach((file) => {
