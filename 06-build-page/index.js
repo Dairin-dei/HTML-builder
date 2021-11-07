@@ -14,7 +14,7 @@ const pathToSourceAssets = path.join(__dirname, "/assets");
 let dataBasic = "";
 
 async function removeDirectory(pathToFolder) {
-  await fsPromises.rmdir(pathToFolder, { recursive: true });
+  await fsPromises.rm(pathToFolder, { recursive: true, force: true });
 }
 
 async function copyFiles(pathCurrent, pathFuture) {

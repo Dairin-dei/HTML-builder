@@ -5,7 +5,7 @@ const pathToFolder = path.join(__dirname, "/files-copy");
 const pathToDir = path.join(__dirname, "/files");
 
 async function removeDirectory() {
-  await fsPromises.rmdir(pathToFolder, { recursive: true });
+  await fsPromises.rm(pathToFolder, { recursive: true, force: true });
 }
 
 async function copyFiles(pathCurrent, pathFuture) {
